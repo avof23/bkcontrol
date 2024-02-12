@@ -1,10 +1,14 @@
+"""
+Script for cleaning and monitoring backup files for a period specified in days
+Work in two modes: command prompt mode and configuration file mode
+"""
+
 import os
-import sys
 from datetime import timedelta, datetime
 import argparse
 import configparser
 
-parser = argparse.ArgumentParser(description="Clear from old backups")
+parser = argparse.ArgumentParser(description="Clear from old backups and monitoring")
 parser.add_argument("path", help="Cleared dir", nargs="*")  # position argument
 parser.add_argument("-a", "--age", type=int, help='Clear days', default=90)  # option that takes a value
 parser.add_argument("-am", "--agemon", type=int, help='Monitoring days', default=7)
@@ -41,8 +45,17 @@ def clearmonitor(clrpath: str,
                  mon: bool = True,
                  verb: bool = False
                  ) -> tuple:
+    """
+    Function find file in specified dir
+    :param clrpath: folder to search for files
+    :param clrday: files are older than a specified number of days
+    :param monday: files are newer than a specified number of days
+    :param remove: remove file enable
+    :param mon: monitoring enable
+    :param verb: verbose output
+    :return: tuple include number files to remove and number actual files
+    """
     filesclear, filesmon = 0, 0
-
     if not os.path.exists(clrpath):
         return filesclear, filesmon
     with os.scandir(path=clrpath) as fileobject:
