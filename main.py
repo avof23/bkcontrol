@@ -5,48 +5,66 @@ import argparse
 import configparser
 
 parser = argparse.ArgumentParser(description="Clear from old backups")
-parser.add_argument("path", help="Cleared dir") # position argument
-parser.add_argument("-a", "--age", type=int, help='Depth save days', default=90) # option that takes a value
+parser.add_argument("path", help="Cleared dir", nargs="*")  # position argument
+parser.add_argument("-a", "--age", type=int, help='Clear days', default=90)  # option that takes a value
+parser.add_argument("-am", "--agemon", type=int, help='Monitoring days', default=7)
 parser.add_argument('-d', '--delete', help='enable clearing mode', action='store_true')
 parser.add_argument('-m', '--monitor', help='enable monitoring mode', action='store_true')
 parser.add_argument('-v', '--verbose', help='print more information about file', action='store_true')  # on/off flag
+parser.add_argument('-c', '--config', type=str, help='get configuration from file')  # option that takes a value
 
 args = parser.parse_args()
+config = configparser.ConfigParser()
 now = datetime.now()
 
-#config = configparser.ConfigParser()
-#config.read("config.ini")
+if args.config and os.path.exists(args.config):
+    config.read(args.config)
+    work_path = config["options"]["path"].split(sep=":")
+    args_age = int(config["options"]["age"])
+    args_agemon = int(config["options"]["agemon"])
+    args_delete = bool(config["options"]["delete"])
+    args_monitor = bool(config["options"]["monitor"])
+    args_verbose = bool(config["options"]["verbose"])
+else:
+    work_path = args.path
+    args_age = args.age
+    args_agemon = args.agemon
+    args_delete = args.delete
+    args_monitor = args.monitor
+    args_verbose = args.verbose
 
-#print(config["Twitter"]["username"])
 
+def clearmonitor(clrpath: str,
+                 clrday: int,
+                 monday: int,
+                 remove: bool = False,
+                 mon: bool = True,
+                 verb: bool = False
+                 ) -> tuple:
+    filesclear, filesmon = 0, 0
 
-def monitoring(monpath: str, alarmday: int) -> str:
-    pass
-
-
-def clearmonitor(clrpath: str, depthday: int) -> int:
-    filesfound = 0
+    if not os.path.exists(clrpath):
+        return filesclear, filesmon
     with os.scandir(path=clrpath) as fileobject:
         for file in fileobject:
             statusinfo = os.stat(file)
-            if args.delete and statusinfo.st_mtime < int((now - timedelta(days=depthday)).timestamp()):
-                filesfound += 1
+            if remove and statusinfo.st_mtime < int((now - timedelta(days=clrday)).timestamp()):
+                filesclear += 1
                 os.remove(file)
-                if args.verbose:
+                if verb:
                     print(f'{file.name} created: {datetime.fromtimestamp(statusinfo.st_mtime)} - removed!')
-            if args.monitor and statusinfo.st_mtime >= int((now - timedelta(days=depthday)).timestamp()):
-                filesfound += 1
-                if args.verbose:
+            if mon and statusinfo.st_mtime >= int((now - timedelta(days=monday)).timestamp()):
+                filesmon += 1
+                if verb:
                     print(f'Found actual backup {file.name} created: {datetime.fromtimestamp(statusinfo.st_mtime)}')
-    return filesfound
+    return filesclear, filesmon
 
 
-print(f"Processed dir: {args.path}")
-if args.age:
-    print(f"Find files oldest: {args.age} days")
+for path in work_path:
+    print(f"Processed dir: {path}")
+    result = clearmonitor(path, args_age, args_agemon, args_delete, args_monitor, args_verbose)
 
-result = clearmonitor(args.path, args.age)
-if args.monitor and not result:
-    print("Alarm actual backup not found!")
-if args.delete:
-    print(f"Removed {result} files.")
+    if args_delete:
+        print(f"Removed {result[0]} files.")
+    if args_monitor and not result[1]:
+        print("Alarm actual backup not found!")
