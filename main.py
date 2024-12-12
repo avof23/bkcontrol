@@ -45,15 +45,18 @@ else:
     alert_type = "console"
 
 
-def send_email(dir_name: str):
+def send_alert(dirs_name: list):
     """
     The function generate notification and send via email or console
-    :param dir_name: Directory name for notification
+    :param dirs_name: Directory names for notification in list
     :return: None
     """
-    alertmsg = (f'Actual Backups in {dir_name} not found!\n'
-               f'Backup oldest them: {args_agemon} days.\n'
-               f'Pleace check your backup job!')
+    alertmsg = ""
+    for dirp in dirs_name:
+        alertmsg = (f'{alertmsg}Actual Backups in {dirp} not found!\n'
+        f'Backup oldest them: {args_agemon} days.\n')
+    alertmsg = f'{alertmsg}Please check your backup job!'
+
     if alert_type == "email":
         message = (f"Subject: Backup checker Alert\n"
                    f"{alertmsg}")
@@ -97,13 +100,15 @@ def clearmonitor(clrpath: str,
                     print(f'Found actual backup {file.name} created: {datetime.fromtimestamp(statusinfo.st_mtime)}')
     return filesclear, filesmon
 
+path_without_backups = list()
 
 for path in work_path:
-    print(f"Processed dir: {path}")
     result = clearmonitor(path, args_age, args_agemon, args_delete, args_monitor, args_verbose)
-
-    if args_delete:
+    if alert_type == "console":
+        print(f"Processed dir: {path}")
         print(f"Removed {result[0]} files.")
+
     if args_monitor and not result[1]:
-        send_email(path)
+        path_without_backups.append(path)
         # print("Alarm actual backup not found!")
+send_alert(path_without_backups)
