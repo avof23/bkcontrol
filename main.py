@@ -7,6 +7,7 @@ import os
 from datetime import timedelta, datetime
 import argparse
 import configparser
+import smtplib
 
 parser = argparse.ArgumentParser(description="Clear from old backups and monitoring")
 parser.add_argument("path", help="Cleared dir", nargs="*")  # position argument
@@ -29,6 +30,11 @@ if args.config and os.path.exists(args.config):
     args_delete = bool(config["options"]["delete"])
     args_monitor = bool(config["options"]["monitor"])
     args_verbose = bool(config["options"]["verbose"])
+    alert_type = config["option"]["alert_type"]
+    email_receiver = config["mail"]["email"]
+    smtp_server = config["mail"]["smtp"]
+    port = int(config["mail"]["port"])
+    email_sender = config["mail"]["sender"]
 else:
     work_path = args.path
     args_age = args.age
@@ -36,6 +42,25 @@ else:
     args_delete = args.delete
     args_monitor = args.monitor
     args_verbose = args.verbose
+    alert_type = "console"
+
+
+def send_email(dir_name: str):
+    """
+    The function generate notification and send via email or console
+    :param dir_name: Directory name for notification
+    :return: None
+    """
+    alertmsg = (f'Actual Backups in {dir_name} not found!\n'
+               f'Backup oldest them: {args_agemon} days.\n'
+               f'Pleace check your backup job!')
+    if alert_type == "email":
+        message = (f"Subject: Backup checker Alert\n"
+                   f"{alertmsg}")
+        with smtplib.SMTP(smtp_server, port) as server:
+            server.sendmail(email_sender, email_receiver, message)
+    else:
+        print(alertmsg)
 
 
 def clearmonitor(clrpath: str,
@@ -80,4 +105,5 @@ for path in work_path:
     if args_delete:
         print(f"Removed {result[0]} files.")
     if args_monitor and not result[1]:
-        print("Alarm actual backup not found!")
+        send_email(path)
+        # print("Alarm actual backup not found!")
