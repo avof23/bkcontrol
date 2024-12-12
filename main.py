@@ -30,7 +30,7 @@ if args.config and os.path.exists(args.config):
     args_delete = bool(config["options"]["delete"])
     args_monitor = bool(config["options"]["monitor"])
     args_verbose = bool(config["options"]["verbose"])
-    alert_type = config["option"]["alert_type"]
+    alert_type = config["options"]["alert_type"]
     email_receiver = config["mail"]["email"]
     smtp_server = config["mail"]["smtp"]
     port = int(config["mail"]["port"])
