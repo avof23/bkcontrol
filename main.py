@@ -27,9 +27,9 @@ if args.config and os.path.exists(args.config):
     work_path = config["options"]["path"].split(sep=":")
     args_age = int(config["options"]["age"])
     args_agemon = int(config["options"]["agemon"])
-    args_delete = bool(config["options"]["delete"])
-    args_monitor = bool(config["options"]["monitor"])
-    args_verbose = bool(config["options"]["verbose"])
+    args_delete = int(config["options"]["delete"])
+    args_monitor = int(config["options"]["monitor"])
+    args_verbose = int(config["options"]["verbose"])
     alert_type = config["options"]["alert_type"]
     email_receiver = config["mail"]["email"]
     smtp_server = config["mail"]["smtp"]
